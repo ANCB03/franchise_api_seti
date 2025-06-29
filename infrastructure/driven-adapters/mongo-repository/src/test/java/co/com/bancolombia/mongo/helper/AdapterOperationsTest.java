@@ -1,18 +1,21 @@
 package co.com.bancolombia.mongo.helper;
 
+import co.com.bancolombia.model.franchise.Franchise;
 import co.com.bancolombia.mongo.MongoDBRepository;
 import co.com.bancolombia.mongo.MongoRepositoryAdapter;
+import co.com.bancolombia.mongo.helper.document.FranchiseDocument;
+import co.com.bancolombia.mongo.helper.mapper.FranchiseDocumentMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.reactivecommons.utils.ObjectMapper;
-import org.springframework.data.domain.Example;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import static org.mockito.ArgumentMatchers.any;
+import java.util.Collections;
+
 import static org.mockito.Mockito.when;
 
 class AdapterOperationsTest {
@@ -23,73 +26,65 @@ class AdapterOperationsTest {
     @Mock
     private ObjectMapper objectMapper;
 
+    @Mock
+    private FranchiseDocumentMapper franchiseDocumentMapper;
+
     private MongoRepositoryAdapter adapter;
 
-    private Object entity;
-    private Flux<Object> entities;
+    private Franchise franchise;
+    private FranchiseDocument document;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        when(objectMapper.map("value", Object.class)).thenReturn("value");
+        adapter = new MongoRepositoryAdapter(repository, objectMapper, franchiseDocumentMapper);
 
-        adapter = new MongoRepositoryAdapter(repository, objectMapper);
+        franchise = Franchise.builder()
+                .id("1")
+                .name("Test Franchise")
+                .branches(Collections.emptyList())
+                .build();
 
-        entity = "value";
-        entities = Flux.just(entity);
+        document = FranchiseDocument.builder()
+                .id("1")
+                .name("Test Franchise")
+                .branches(Collections.emptyList())
+                .build();
+
+        when(objectMapper.mapBuilder(document, Franchise.FranchiseBuilder.class)).thenReturn(franchise.toBuilder());
+        when(objectMapper.map(franchise, FranchiseDocument.class)).thenReturn(document);
+
+        when(franchiseDocumentMapper.toEntity(document)).thenReturn(franchise);
+        when(franchiseDocumentMapper.toDocument(franchise)).thenReturn(document);
     }
 
     @Test
     void testSave() {
-        when(repository.save(entity)).thenReturn(Mono.just("value"));
+        when(repository.findAll()).thenReturn(Flux.empty());
+        when(repository.findById("1")).thenReturn(Mono.empty());
+        when(repository.save(document)).thenReturn(Mono.just(document));
 
-        StepVerifier.create(adapter.save(entity))
-                .expectNext("value")
-                .verifyComplete();
-    }
-
-    @Test
-    void testSaveAll() {
-        when(repository.saveAll(any(Flux.class))).thenReturn(entities);
-
-        StepVerifier.create(adapter.saveAll(entities))
-                .expectNext("value")
+        StepVerifier.create(adapter.save(franchise))
+                .expectNext(franchise)
                 .verifyComplete();
     }
 
     @Test
     void testFindById() {
-        when(repository.findById("key")).thenReturn(Mono.just(entity));
+        when(repository.findById("1")).thenReturn(Mono.just(document));
 
-        StepVerifier.create(adapter.findById("key"))
-                .expectNext("value")
-                .verifyComplete();
-    }
-
-    @Test
-    void testFindByExample() {
-        when(repository.findAll(any(Example.class))).thenReturn(entities);
-
-        StepVerifier.create(adapter.findByExample(entity))
-                .expectNext("value")
+        StepVerifier.create(adapter.findById("1"))
+                .expectNext(franchise)
                 .verifyComplete();
     }
 
     @Test
     void testFindAll() {
-        when(repository.findAll()).thenReturn(entities);
+        when(repository.findAll()).thenReturn(Flux.just(document));
 
         StepVerifier.create(adapter.findAll())
-                .expectNext("value")
-                .verifyComplete();
-    }
-
-    @Test
-    void testDeleteById() {
-        when(repository.deleteById("key")).thenReturn(Mono.empty());
-
-        StepVerifier.create(adapter.deleteById("key"))
+                .expectNext(franchise)
                 .verifyComplete();
     }
 }
