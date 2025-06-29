@@ -10,11 +10,22 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 @Configuration
 public class RouterRest {
     @Bean
-    public RouterFunction<ServerResponse> routerFunction(HandlerV1 handlerV1, HandlerV2 handlerV2) {
+    public RouterFunction<ServerResponse> routerFunction(HandlerV1 handler) {
         return RouterFunctions
-            .route()
-            .path("/api/v1", builder -> builder.GET("/usecase/path", handlerV1::listenGETUseCase).POST("/usecase/otherpath", handlerV1::listenPOSTUseCase).GET("/otherusercase/path", handlerV1::listenGETOtherUseCase))
-            .path("/api/v2", builder -> builder.GET("/usecase/path", handlerV2::listenGETUseCase).POST("/usecase/otherpath", handlerV2::listenPOSTUseCase).GET("/otherusercase/path", handlerV2::listenGETOtherUseCase))
-            .build();
-        }
+                .route()
+                .path("/api-v1/franchises", builder -> builder
+                        .GET("", handler::findAll)
+                        .GET("/{id}", handler::findById)
+                        .POST("", handler::save)
+                        .POST("/{id}/branches", handler::addBranch)
+                        .POST("/{id}/branches/{branchName}/products", handler::addProduct)
+                        .DELETE("/{id}/branches/{branchName}/products/{productName}", handler::removeProduct)
+                        .PATCH("/{id}/branches/{branchName}/products/{productName}/stock", handler::updateStock)
+                        .GET("/{id}/products/top", handler::getTopProductsPerBranch)
+                        .PUT("/{id}/name/{newName}", handler::updateFranchiseName)
+                        .PUT("/{id}/branch/{currentName}/name/{newName}", handler::updateBranchName)
+                        .PUT("/{id}/branch/{branchName}/product/{currentName}/name/{newName}", handler::updateProductName)
+                )
+                .build();
+    }
 }
