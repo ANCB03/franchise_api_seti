@@ -25,4 +25,11 @@ jar {
 bootJar {
     // Sets output jar name
     archiveFileName = "${project.getParent().getName()}.${archiveExtension.get()}"
+
+    doLast {
+        copy {
+            from archiveFile
+            into "$rootDir/deployment"
+        }
+    }
 }
