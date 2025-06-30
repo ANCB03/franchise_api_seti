@@ -35,3 +35,31 @@ sonar {
 }
 
 apply from: './main.gradle'
+
+
+if (!tasks.named("jacocoMergedReport")) {
+    tasks.register("jacocoMergedReport", JacocoReport) {
+        dependsOn subprojects.findAll { it.tasks.named('test') }.collect { it.tasks.test }
+
+        executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/test.exec")
+
+        subprojects.each { subproject ->
+            def mainSrc = "${subproject.projectDir}/src/main/java"
+            def output = "${subproject.layout.buildDirectory.get().asFile}/classes/java/main"
+            if (file(mainSrc).exists() && file(output).exists()) {
+                sourceDirectories.from files(mainSrc)
+                classDirectories.from files(output)
+            }
+        }
+
+        reports {
+            xml.required = true
+            html.required = true
+            csv.required = false
+        }
+    }
+}
+
+tasks.withType(JacocoReport).matching { it.name == "jacocoTestReport" }.configureEach {
+    finalizedBy("jacocoMergedReport")
+}
