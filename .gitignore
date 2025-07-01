@@ -334,3 +334,6 @@ gradle-app.setting
 # -----
 *.hprof
 build-cache
+
+# Terraform secrets
+.deploy/terraform/secrets.tfvars
